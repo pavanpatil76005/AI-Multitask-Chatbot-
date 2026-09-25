@@ -1,79 +1,48 @@
-# Local PostgreSQL database
+# Database
 
-PostgreSQL 17.11 is installed from the existing Windows binary archive under
-`.local/pgsql`. Database files are in `.local/pgdata`. The server listens only
-on `127.0.0.1:5432`, uses SCRAM password authentication, and owns a database
-named `ai_chatbot` with owner `postgres`. Alembic migration `63abf2568aaf` creates `users`, `chats`, and `messages`;
-`alembic_version` tracks the applied revision.
+The application uses PostgreSQL through SQLAlchemy and Alembic. For production,
+set a single `DATABASE_URL` (Neon or another managed PostgreSQL service). Local
+development can continue to use the project-local server under `.local/`.
 
-Credentials are in `backend/.env`, which is ignored by Git. Do not commit it.
-`backend/.env.example` lists the required settings without real credentials.
+## Tables
 
-## Start after restarting Windows
+| Table | Purpose | Important relationships/fields |
+| --- | --- | --- |
+| `users` | Authentication accounts | Unique `email`, Argon2 `password_hash` |
+| `chats` | Conversation metadata | Belongs to user; pin/archive/search state |
+| `messages` | User/assistant turns and task results | Belongs to chat; role, status, generation token |
+| `tasks` | Individual work items | Belongs to chat/run; status, progress, result, error |
+| `task_runs` | One multitask plan/execution lifecycle | Prompt, deadline, token, request/result messages |
+| `attachments` | Extracted file metadata and text | Belongs to user and optional chat; SHA-256, size |
+| `alembic_version` | Applied migration head | Managed by Alembic |
 
-Run from the project root in PowerShell:
+Foreign keys use cascading deletes for user/chat-owned data. Task and run states
+are protected by database check constraints as well as Pydantic validation.
 
-```powershell
-& ./.local/pgsql/bin/pg_ctl.exe -D ./.local/pgdata -l ./.local/postgresql.log -w start
+## Production connection
+
+```text
+DATABASE_URL=<copy the Neon pooled connection string here>
 ```
 
-This is a project-local server, not an automatically starting Windows service.
+`backend/app/core/config.py` accepts either `DATABASE_URL` or the discrete
+`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, and `DB_PASSWORD` settings.
+`DATABASE_URL` takes precedence and is required in managed deployments.
 
-## Check the connection
+Apply and verify migrations:
 
 ```powershell
 cd backend
-& ./.venv/Scripts/python.exe -m app.core.database
-```
-
-With FastAPI running, open http://127.0.0.1:8000/health/database.
-A successful response is HTTP 200 with `{"status":"ok","database":"connected"}`.
-Connection failures return HTTP 503 without exposing credentials.
-The existing home endpoint and Swagger `/docs` remain available.
-
-## Stop PostgreSQL
-
-From the project root:
-
-```powershell
-& ./.local/pgsql/bin/pg_ctl.exe -D ./.local/pgdata -m fast -w stop
-```
-
-## Optional pgAdmin connection
-
-If pgAdmin is installed later, register a server using host `127.0.0.1`, port
-`5432`, maintenance database `postgres`, username `postgres`, and the password
-stored in `backend/.env`. Expand Databases to see `ai_chatbot`.
-
-## Next stage
-
-The User, Chat, and Message models and their relationships are implemented.
-Authentication is implemented; see [authentication](authentication.md).
-Chat and message APIs are implemented; see [chat API usage](chats.md).
-
-## Migrations
-
-From `backend`, use the project virtual environment:
-
-```powershell
 & ./.venv/Scripts/python.exe -m alembic upgrade head
 & ./.venv/Scripts/python.exe -m alembic current
 & ./.venv/Scripts/python.exe -m alembic check
 ```
 
-Alembic reads the existing settings and `.env`; no credentials are stored in
-`alembic.ini`. The application does not automatically create or migrate tables.
-After changing models, generate and review a migration before applying it:
+The current head is `i405_legacy_failures`. The chain normalizes task state,
+tracks generation start time for safe recovery, and classifies exact legacy
+provider-failure placeholders.
 
-```powershell
-& ./.venv/Scripts/python.exe -m alembic revision --autogenerate -m "describe schema change"
-```
+## Local database
 
-Verified against PostgreSQL: defaults, user/chat/message relationships, unique
-email, foreign keys, orphan deletion, and ORM/database delete cascades. All
-verification rows were rolled back. Schema comparison reported no differences.
-See [Alembic autogeneration](https://alembic.sqlalchemy.org/en/latest/autogenerate.html)
-and [SQLAlchemy cascades](https://docs.sqlalchemy.org/en/20/orm/cascades.html).
-
-References: [PostgreSQL Windows binaries](https://www.postgresql.org/download/windows/)
-and [SQLAlchemy engines](https://docs.sqlalchemy.org/en/20/tutorial/engine.html).
+The local PostgreSQL data directory is `.local/pgdata`, which is ignored by Git.
+Credentials belong only in `backend/.env`. Never commit that file.

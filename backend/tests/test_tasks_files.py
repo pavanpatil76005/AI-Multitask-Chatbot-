@@ -118,8 +118,9 @@ class TaskFileTests(unittest.TestCase):
         message = Message(chat_id=chat["id"], role="assistant", content="", status="generating", generation_token="attempt")
         self.db.add(message)
         self.db.flush()
+        from app.core.database import utcnow
         run = TaskRun(chat_id=chat["id"], prompt="Work", status="running", generation_token="attempt",
-                      deadline_at=datetime.utcnow() + timedelta(minutes=1), result_message_id=message.id)
+                      deadline_at=utcnow() + timedelta(minutes=1), result_message_id=message.id)
         self.db.add(run)
         self.db.flush()
         task = Task(chat_id=chat["id"], run_id=run.id, title="Work", status="in_progress", generation_token="attempt")
@@ -131,7 +132,7 @@ class TaskFileTests(unittest.TestCase):
         self.assertEqual(self.db.get(TaskRun, run.id).status, "cancelled")
         task.status, task.generation_token = "in_progress", "restart"
         run.status, run.generation_token = "running", "restart"
-        run.deadline_at = datetime.utcnow() - timedelta(seconds=1)
+        run.deadline_at = utcnow() - timedelta(seconds=1)
         message.status, message.generation_token = "generating", "restart"
         self.db.commit()
         self.assertEqual(self.client.get(path, headers=self.headers).json()[0]["status"], "failed")

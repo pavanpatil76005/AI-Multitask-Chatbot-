@@ -71,7 +71,7 @@ provider generator is closed. A new attempt timestamp fixes premature recovery
 of old messages during retry/regeneration. Non-streaming transport failures now
 try the configured fallback provider, consistent with streaming failures.
 
-- 51 backend tests passed with no unclosed psycopg connection warnings, including
+- 54 backend tests passed with no unclosed psycopg connection warnings, including
   two-user isolation, invalid/expired tokens, duplicate registration, wrong
   passwords, empty messages, deletion/history, failures/retries, cancellation,
   timeout/restart recovery, legacy failure repair, invalid uploads, uploads over
@@ -80,8 +80,7 @@ try the configured fallback provider, consistent with streaming failures.
 - Backend compilation passed and Alembic reported no schema drift.
 - Latest migration: `i405_legacy_failures` (head).
 
-No browser connection was available. Browser clicks, screenshots, responsive
-visual review, and a literal browser-refresh check remain unverified. The live
-checks used the same HTTP endpoints and fresh history requests, and Markdown was
-render-tested through React. Deployment work remains deferred as requested; no
-public deployment or Streamlit conversion was performed in this pass.
+Headless Chrome screenshots were captured for the final documentation. Interactive
+clicks, responsive visual review, and a literal browser-refresh check remain
+manual. The live checks used the same HTTP endpoints and fresh history requests,
+and Markdown was render-tested through React.

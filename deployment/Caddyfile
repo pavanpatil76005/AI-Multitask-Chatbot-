@@ -1,7 +1,7 @@
 {$APP_DOMAIN} {
     @backend path /api/* /health/* /docs /openapi.json
     handle @backend {
-        reverse_proxy backend:8001 {
+        reverse_proxy backend:8000 {
             flush_interval -1
         }
     }

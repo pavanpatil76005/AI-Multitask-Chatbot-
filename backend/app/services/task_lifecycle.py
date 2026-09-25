@@ -1,11 +1,12 @@
 """Bounded task execution with persisted deadlines and guarded late results."""
-from concurrent.futures import ThreadPoolExecutor, wait, FIRST_COMPLETED
-from datetime import UTC, datetime, timedelta
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from datetime import timedelta
 from threading import BoundedSemaphore
 from uuid import uuid4
 
 from fastapi import HTTPException
 from sqlalchemy import func, or_, select, update
+from app.core.database import utcnow
 from app.models import Chat, Message, Task, TaskRun
 from app.services.ai_service import log_ai_error
 
@@ -13,11 +14,6 @@ EXECUTOR = ThreadPoolExecutor(max_workers=6, thread_name_prefix="ai-task")
 RUN_SLOTS = BoundedSemaphore(2)
 RUN_TIMEOUT_SECONDS = 180
 STREAM_TIMEOUT_SECONDS = 15 * 60
-
-
-def utcnow() -> datetime:
-    """Return naive UTC for the project's existing DateTime columns."""
-    return datetime.now(UTC).replace(tzinfo=None)
 
 
 def aggregate_results(tasks):

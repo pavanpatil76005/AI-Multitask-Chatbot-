@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: ai-multitask-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health/database
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        sync: false
+      - key: GEMINI_FALLBACK_MODEL
+        sync: false
+      - key: GEMINI_SECOND_FALLBACK_MODEL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false

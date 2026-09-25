@@ -1,5 +1,5 @@
 """Chat/message integration tests against PostgreSQL; test data is rolled back."""
-from datetime import datetime, timedelta
+from datetime import timedelta
 import unittest
 from unittest.mock import patch
 from uuid import uuid4
@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.ai.gemini_provider import GeminiProvider
-from app.core.database import get_db, get_engine
+from app.core.database import get_db, get_engine, utcnow
 from app.core.security import create_access_token, hash_password
 from app.main import app
 from app.models import Chat, Message, User
@@ -305,7 +305,7 @@ class ChatTests(unittest.TestCase):
     def test_activity_order_and_message_tie_order(self):
         first, second = self.create(), self.create()
         stored = self.db.get(Chat, first["id"])
-        stored.updated_at = datetime.utcnow() - timedelta(days=1)
+        stored.updated_at = utcnow() - timedelta(days=1)
         self.db.commit()
         response = self.client.get("/api/chats", headers=self.headers)
         self.assertEqual(response.json()[0]["id"], second["id"])
@@ -315,7 +315,7 @@ class ChatTests(unittest.TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(self.client.get("/api/chats", headers=self.headers).json()[0]["id"], first["id"])
         messages = self.db.scalars(select(Message).where(Message.chat_id == first["id"])).all()
-        same_time = datetime.utcnow()
+        same_time = utcnow()
         for message in messages:
             message.created_at = same_time
         self.db.commit()

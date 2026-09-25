@@ -1,11 +1,17 @@
-from functools import lru_cache
 from collections.abc import Generator
+from datetime import datetime, timezone
+from functools import lru_cache
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import DeclarativeBase, Session
 
 from app.core.config import get_settings
+
+
+def utcnow() -> datetime:
+    """Return naive UTC for the project's existing TIMESTAMP columns."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class Base(DeclarativeBase):

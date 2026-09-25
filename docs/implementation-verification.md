@@ -18,12 +18,13 @@ errors finalize the run as retryable rather than waiting for the deadline.
 ## Offline verification
 
 - Python compilation passed for `app`, `migrations`, and `tests`.
-- **51 backend tests passed against PostgreSQL** with `ResourceWarning` promoted to an
+- **54 backend tests passed against PostgreSQL** with `ResourceWarning` promoted to an
   error and **zero unclosed psycopg connection warnings**, including auth/ownership, streaming
   stop/retry, edit/regenerate, search/pin/archive, Markdown security, task
   parallelism, aggregation, partial failure/retry, timeout/late-result rejection,
   cancellation, startup/periodic recovery, orphaned tasks, PDF/CSV/TXT/Markdown,
-  upload limits, planner validation, and Gemini retry/fallback behavior.
+  upload limits, planner validation, production `DATABASE_URL`/CORS settings, and
+  Gemini retry/fallback behavior.
 - **10 frontend tests passed**: 7 API/session/upload tests and 3 Markdown-rendering
   and security tests.
 - ESLint, TypeScript (`tsc --noEmit`), and the optimized Next.js production build
@@ -55,9 +56,9 @@ Gemini failure-handling requirement. The report is
 
 ## Remaining external checks
 
-No browser automation tool was available, so final visual interaction and
-responsive-layout checks across real browser sizes remain manual. The deployment
-package is prepared, but Docker is not installed in this workspace and no hosting
-destination/domain was supplied, so remote deployment and container-image builds
-could not be performed. The in-process executor should run as a single API process;
-use external durable queueing before scaling workers.
+Headless Chrome screenshots of login, registration, and Swagger are stored under
+`docs/screenshots/`. Final interactive visual checks across browser sizes remain
+manual. The deployment manifests are prepared, but Docker/provider credentials are
+not installed on this workstation, so container and remote builds could not be
+executed here. The in-process executor should run as a single API process; use
+external durable queueing before scaling workers.

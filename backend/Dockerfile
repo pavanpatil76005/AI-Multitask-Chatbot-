@@ -8,9 +8,11 @@ RUN pip install --no-cache-dir --upgrade pip \
 COPY app ./app
 COPY migrations ./migrations
 COPY alembic.ini .
-RUN useradd --create-home appuser
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+RUN useradd --create-home appuser \
+    && chmod +x ./docker-entrypoint.sh
 USER appuser
-EXPOSE 8001
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health/database', timeout=3)"]
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+EXPOSE 8000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/database', timeout=3)"]
+CMD ["./docker-entrypoint.sh"]

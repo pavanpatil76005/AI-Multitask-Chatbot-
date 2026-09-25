@@ -1,0 +1,64 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ai_chatbot
+      POSTGRES_USER: chatbot
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in deployment.env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatbot -d ai_chatbot"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+  migrate:
+    build: ./backend
+    env_file: deployment.env
+    environment: &backend_env
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_NAME: ai_chatbot
+      DB_USER: chatbot
+    command: ["alembic", "upgrade", "head"]
+    depends_on:
+      db:
+        condition: service_healthy
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    env_file: deployment.env
+    environment: *backend_env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/health/database')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ""
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+  gateway:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:?Set your public domain}
+    volumes:
+      - ./deployment/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [frontend, backend]
+volumes:
+  postgres_data:
+  caddy_data:
+  caddy_config:

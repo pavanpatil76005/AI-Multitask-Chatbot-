@@ -1,0 +1,11 @@
+fastapi[standard]
+sqlalchemy
+psycopg[binary]
+alembic
+pydantic-settings
+pyjwt
+pwdlib[argon2]
+python-multipart
+email-validator
+google-genai
+pypdf>=6,<7

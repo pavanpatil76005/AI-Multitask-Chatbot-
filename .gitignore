@@ -1,0 +1,50 @@
+# Normalize text in the repository while preserving Windows scripts.
+* text=auto
+*.sh text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary assets
+*.ico binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.woff binary
+*.woff2 binary
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Local environment variables
+.env
+.env.*
+!.env.example
+deployment.env
+
+# Local tooling and test caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Build output
+dist/
+build/
+coverage/
+
+# Logs
+*.log
+
+# Editor and operating system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local PostgreSQL binaries and database files
+.local/

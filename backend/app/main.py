@@ -66,7 +66,11 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=get_settings().cors_origins,
+    allow_origins=list(dict.fromkeys([
+        *get_settings().cors_origins,
+        "http://localhost:3000",
+        "https://ai-multitask-chatbot.vercel.app",
+    ])),
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],

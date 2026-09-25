@@ -5,7 +5,7 @@
 ```mermaid
 flowchart LR
     U[Browser] --> V[Vercel Next.js]
-    V -->|HTTPS /api| R[Render FastAPI]
+    U -->|HTTPS /api from client JavaScript| R[Render FastAPI]
     R -->|SQL over TLS| N[Neon PostgreSQL]
     R -->|HTTPS| G[Gemini API]
 ```
@@ -55,7 +55,7 @@ flowchart LR
 2. Text is extracted in memory; original file bytes are never stored.
 3. Ownership-checked attachment metadata and extracted text are persisted.
 4. PDF is limited to 50 pages and scanned PDFs without text are rejected.
-5. CSV numeric columns receive computed count/highest/average/total values.
+5. CSV numeric columns receive Python-computed count/highest/lowest/average/total values.
 
 ## Deployment boundaries
 

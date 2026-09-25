@@ -92,3 +92,16 @@ Run in this order:
 - Review pending Alembic revisions before the next production migration.
 - Rotate `SECRET_KEY` or `GEMINI_API_KEY` directly in Render; never commit values.
 - Keep `CORS_ORIGINS` explicit. Do not use `*` with credentialed requests.
+
+## Verification status
+
+The configuration is prepared; no Neon database or Render/Vercel deployment was
+created in this pass. Docker CLI/Desktop and authenticated provider access are
+unavailable in the current environment. Actual production URLs, production CORS,
+and the complete hosted smoke test remain pending. The CI workflow now includes
+an image build plus a disposable PostgreSQL/container health test on its next run;
+adding that job does not mean it has run successfully.
+
+Configuration references: [Render Blueprint specification](https://render.com/docs/blueprint-spec),
+[Vercel monorepos](https://vercel.com/docs/monorepos), and
+[Vercel environment variables](https://vercel.com/docs/environment-variables).

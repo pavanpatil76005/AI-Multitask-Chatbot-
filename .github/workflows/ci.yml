@@ -6,6 +6,42 @@ on:
   pull_request:
 
 jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build -t ai-multitask-backend ./backend
+      - name: Run PostgreSQL and backend
+        run: |
+          docker network create chatbot-test
+          docker run -d --name chatbot-db --network chatbot-test \
+            -e POSTGRES_DB=ai_chatbot -e POSTGRES_USER=chatbot \
+            -e POSTGRES_PASSWORD=ci-only-password \
+            --health-cmd="pg_isready -U chatbot -d ai_chatbot" \
+            --health-interval=2s --health-retries=30 postgres:17-alpine
+          for attempt in $(seq 1 60); do
+            if [ "$(docker inspect -f '{{.State.Health.Status}}' chatbot-db)" = healthy ]; then break; fi
+            sleep 2
+          done
+          test "$(docker inspect -f '{{.State.Health.Status}}' chatbot-db)" = healthy
+          docker run -d --name chatbot-api --network chatbot-test -p 8001:8000 \
+            -e DATABASE_URL=postgresql://chatbot:ci-only-password@chatbot-db/ai_chatbot \
+            -e SECRET_KEY=ci-only-secret-at-least-thirty-two-characters \
+            ai-multitask-backend
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:8001/health/database; then break; fi
+            sleep 2
+          done
+          curl --fail http://127.0.0.1:8001/health/database
+          curl --fail --output /dev/null http://127.0.0.1:8001/docs
+      - name: Container diagnostics and cleanup
+        if: always()
+        run: |
+          docker logs chatbot-api || true
+          docker rm -f chatbot-api chatbot-db || true
+          docker network rm chatbot-test || true
+
   backend:
     runs-on: ubuntu-latest
     services:

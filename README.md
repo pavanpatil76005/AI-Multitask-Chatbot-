@@ -41,7 +41,7 @@ recorded below after provider authentication.
 ```mermaid
 flowchart LR
     B[Browser] --> V[Vercel Next.js]
-    V -->|HTTPS /api| R[Render FastAPI]
+    B -->|HTTPS /api from client JavaScript| R[Render FastAPI]
     R -->|SQL + TLS| N[Neon PostgreSQL]
     R -->|HTTPS| G[Gemini API]
 ```
@@ -63,7 +63,7 @@ See [architecture](docs/architecture.md), [database](docs/database.md), and
 
 ## API summary
 
-All `/api/*` routes require `Authorization: Bearer <token>`.
+All `/api/*` routes except registration and login require `Authorization: Bearer <token>`.
 
 | Method | Route | Purpose |
 | --- | --- | --- |
@@ -85,7 +85,8 @@ All `/api/*` routes require `Authorization: Bearer <token>`.
 | `POST` | `/api/chats/{id}/tasks/run` | Run/retry plan |
 | `POST` | `/api/chats/{id}/tasks/{tid}/retry` | Retry one task |
 | `POST` | `/api/chats/{id}/tasks/cancel` | Cancel active run |
-| `POST/GET` | `/api/files` | Extract/list attachments |
+| `POST` | `/api/files/extract` | Extract attachment |
+| `GET` | `/api/files?chat_id={id}` | List attachment metadata |
 | `GET` | `/health/database` | Database health |
 
 Interactive OpenAPI documentation is available at `/docs`.
@@ -100,9 +101,12 @@ Prerequisites: Python 3.13, Node.js 22, npm, and PostgreSQL.
 
 # Backend
 cd backend
+py -3.13 -m venv .venv
+Copy-Item .env.example .env
+# Configure database credentials and Gemini settings in .env before starting.
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe -m alembic upgrade head
-.\.venv\Scriptsastapi.exe dev app/main.py --port 8001
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8001
 ```
 
 Create `backend/.env` from `backend/.env.example`. Never commit it.
@@ -143,11 +147,16 @@ scripts are available in `backend/verify_*.py` and consume Gemini quota.
 ```powershell
 cd backend
 docker build -t ai-multitask-backend .
-docker run --rm -p 8001:8000 --env-file .env ai-multitask-backend
+docker run --rm -p 127.0.0.1:8001:8000 --env-file .env -e DB_HOST=host.docker.internal ai-multitask-backend
 ```
 
 Open http://127.0.0.1:8001/docs. The container runs migrations before Uvicorn,
 uses a non-root user, exposes port 8000, and has a database health check.
+Stop the locally running backend first to free port 8001. On Docker Desktop,
+`host.docker.internal` addresses PostgreSQL running on the host; `127.0.0.1`
+inside a container addresses the container itself. PostgreSQL must accept the
+container connection. For Neon, set `DATABASE_URL` instead; it takes precedence
+over the individual `DB_*` settings. See [Docker networking](https://docs.docker.com/desktop/features/networking/).
 
 For the full local stack:
 
@@ -200,7 +209,8 @@ three external account operations cannot be completed non-interactively.
 
 ## Conclusion
 
-The repository is production-configured and verified for local PostgreSQL use.
-All application, recovery, security, container, CI, and deployment-manifest work
-is complete. Remaining work is limited to authenticating Neon, Render, and
-Vercel, entering their secrets, and running the final deployed smoke test.
+The application has passed local PostgreSQL, backend, and frontend checks.
+Container and cloud manifests are prepared. Docker build/run verification,
+Neon/Render/Vercel provisioning, production CORS with the actual domain, and
+the final hosted smoke test are still pending. Prepared configuration is not
+evidence of a successful deployment.

@@ -1,19 +1,6 @@
-# Normalize text in the repository while preserving Windows scripts.
-* text=auto
-*.sh text eol=lf
-*.cmd text eol=crlf
-*.bat text eol=crlf
-*.ps1 text eol=crlf
-
-# Binary assets
-*.ico binary
-*.png binary
-*.jpg binary
-*.jpeg binary
-*.gif binary
-*.woff binary
-*.woff2 binary
+# Text and binary attributes belong in .gitattributes.
 node_modules/
+.next/
 .venv/
 venv/
 __pycache__/

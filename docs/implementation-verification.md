@@ -18,7 +18,7 @@ errors finalize the run as retryable rather than waiting for the deadline.
 ## Offline verification
 
 - Python compilation passed for `app`, `migrations`, and `tests`.
-- **54 backend tests passed against PostgreSQL** with `ResourceWarning` promoted to an
+- **55 backend tests passed against PostgreSQL** with `ResourceWarning` promoted to an
   error and **zero unclosed psycopg connection warnings**, including auth/ownership, streaming
   stop/retry, edit/regenerate, search/pin/archive, Markdown security, task
   parallelism, aggregation, partial failure/retry, timeout/late-result rejection,

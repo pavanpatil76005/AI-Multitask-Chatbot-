@@ -28,7 +28,7 @@ jobs:
       DB_NAME: ai_chatbot
       DB_USER: postgres
       DB_PASSWORD: test-password
-      SECRET_KEY: ci-only-secret-key-with-at-least-32-characters
+      SECRET_KEY: ci-only-secret-key-with-at-least-sixty-four-random-characters
       CORS_ORIGINS: http://localhost:3000
       GEMINI_API_KEY: ""
     defaults:
@@ -62,5 +62,5 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run lint
-      - run: npx tsc --noEmit --incremental false
       - run: npm run build
+      - run: npx tsc --noEmit --incremental false

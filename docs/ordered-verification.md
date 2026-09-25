@@ -71,7 +71,7 @@ provider generator is closed. A new attempt timestamp fixes premature recovery
 of old messages during retry/regeneration. Non-streaming transport failures now
 try the configured fallback provider, consistent with streaming failures.
 
-- 54 backend tests passed with no unclosed psycopg connection warnings, including
+- 55 backend tests passed with no unclosed psycopg connection warnings, including
   two-user isolation, invalid/expired tokens, duplicate registration, wrong
   passwords, empty messages, deletion/history, failures/retries, cancellation,
   timeout/restart recovery, legacy failure repair, invalid uploads, uploads over

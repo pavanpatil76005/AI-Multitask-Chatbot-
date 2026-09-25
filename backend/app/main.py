@@ -72,7 +72,7 @@ app.add_middleware(
         "https://ai-multitask-chatbot.vercel.app",
     ])),
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 

@@ -234,7 +234,7 @@ class TaskFileTests(unittest.TestCase):
             self.assertEqual(response.json()["text"], content.decode())
         for name, content, code in [("bad.exe", b"data", 415), ("empty.txt", b" ", 422),
                                     ("bad.pdf", b"invalid", 422), ("long.txt", b"x" * 40001, 413),
-                                    ("huge.txt", b"x" * (5 * 1024 * 1024 + 1), 413)]:
+                                    ("huge.txt", b"x" * (50 * 1024 * 1024 + 1), 413)]:
             self.assertEqual(self.client.post(path, files={"file": (name, content)}, headers=self.headers).status_code, code)
         from pypdf import PdfWriter
         from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
@@ -250,6 +250,84 @@ class TaskFileTests(unittest.TestCase):
         response = self.client.post(path, files={"file": ("sample.pdf", output.getvalue())}, headers=self.headers)
         self.assertEqual(response.status_code, 200, response.text)
         self.assertIn("Hello PDF", response.json()["text"])
+
+    def test_chunked_upload_with_50mb_limit(self):
+        """Test that files up to 50MB are accepted and chunked reading works."""
+        path = "/api/files/extract"
+        # Create a 20MB file to test chunking
+        large_content = b"x" * (20 * 1024 * 1024)
+        response = self.client.post(path, files={"file": ("large.txt", large_content)}, headers=self.headers)
+        self.assertEqual(response.status_code, 200, response.text)
+        data = response.json()
+        self.assertEqual(data["size_bytes"], 20 * 1024 * 1024)
+        self.assertEqual(len(data["sha256"]), 64)  # SHA256 hex digest
+
+    def test_upload_exceeds_50mb_limit(self):
+        """Test that files over 50MB are rejected."""
+        path = "/api/files/extract"
+        oversized = b"x" * (50 * 1024 * 1024 + 1)
+        response = self.client.post(path, files={"file": ("oversized.txt", oversized)}, headers=self.headers)
+        self.assertEqual(response.status_code, 413)
+        self.assertIn("50 MB", response.json()["detail"])
+
+    def test_attachment_upload_status_fields(self):
+        """Test that new attachment fields are populated correctly."""
+        from app.models import Attachment
+        path = "/api/files/extract"
+        response = self.client.post(path, files={"file": ("test.txt", b"Hello World")}, headers=self.headers)
+        self.assertEqual(response.status_code, 200, response.text)
+        
+        attachment = self.db.get(Attachment, response.json()["id"])
+        self.assertEqual(attachment.upload_status, "completed")
+        self.assertEqual(attachment.processing_status, "completed")
+        self.assertIsNone(attachment.storage_key)  # Not set until object storage
+
+    def test_presign_endpoint_placeholder(self):
+        """Test that presign endpoint exists and returns placeholder."""
+        path = "/api/uploads/presign"
+        response = self.client.post(
+            path,
+            data={"chat_id": self.create()["id"], "filename": "test.pdf", "file_size": 1024},
+            headers=self.headers
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        data = response.json()
+        self.assertIn("upload_url", data)
+        self.assertIn("storage_key", data)
+        self.assertIn("expiry", data)
+
+    def test_complete_endpoint_not_implemented(self):
+        """Test that complete endpoint returns 501 Not Implemented."""
+        path = "/api/uploads/complete"
+        response = self.client.post(
+            path,
+            data={
+                "chat_id": self.create()["id"],
+                "filename": "test.pdf",
+                "file_size": 1024,
+                "storage_key": "uploads/test.pdf"
+            },
+            headers=self.headers
+        )
+        self.assertEqual(response.status_code, 501)
+
+    def test_file_list_includes_attachment_metadata(self):
+        """Test that file listing returns upload/processing status."""
+        path = "/api/files/extract"
+        chat = self.create()
+        response = self.client.post(
+            path,
+            data={"chat_id": chat["id"]},
+            files={"file": ("metadata.csv", b"a,b\n1,2")},
+            headers=self.headers
+        )
+        self.assertEqual(response.status_code, 200)
+        
+        list_response = self.client.get(f"/api/files?chat_id={chat['id']}", headers=self.headers)
+        self.assertEqual(list_response.status_code, 200)
+        files = list_response.json()
+        self.assertEqual(len(files), 1)
+        self.assertEqual(files[0]["filename"], "metadata.csv")
 
 
 class PlannerTests(unittest.TestCase):

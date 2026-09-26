@@ -14,4 +14,7 @@ class Attachment(Base):
     size_bytes: Mapped[int]
     sha256: Mapped[str] = mapped_column(String(64))
     text: Mapped[str] = mapped_column(Text)
+    storage_key: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    upload_status: Mapped[str] = mapped_column(String(50), default="completed")  # completed, pending, failed
+    processing_status: Mapped[str] = mapped_column(String(50), default="completed")  # completed, in_progress, failed
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)

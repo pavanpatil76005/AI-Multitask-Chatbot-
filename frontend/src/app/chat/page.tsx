@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Markdown from "@/components/Markdown";
+import { FileUploadZone } from "@/components/FileUploadZone";
 
 import { apiRequest, errorDetail, responseError, SessionExpiredError } from "@/services/api";
 
@@ -204,7 +205,7 @@ export default function ChatPage() {
     setUploading(true);
     setError("");
     try {
-      if (file.size > 5 * 1024 * 1024) throw new Error("File exceeds the 5 MB limit.");
+      if (file.size > 50 * 1024 * 1024) throw new Error("File exceeds the 50 MB limit.");
       const body = new FormData();
       body.append("file", file);
       if (selectedChatId) body.append("chat_id", String(selectedChatId));
@@ -214,6 +215,7 @@ export default function ChatPage() {
       setAttachment(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
+      throw err;
     } finally { setUploading(false); }
   }
 
@@ -770,15 +772,14 @@ export default function ChatPage() {
           <button type="button" onClick={() => setEditingMessage(null)} className="underline">Cancel</button>
         </div>}
         <form onSubmit={handleSendMessage} className="border-t border-zinc-800 p-4">
-          <div className="mb-3 text-sm">
-            <label>Attach PDF, CSV, TXT or Markdown (5 MB)
-              <input type="file" accept=".pdf,.csv,.txt,.md" disabled={!selectedChat || busy} className="ml-2 max-w-full"
-                onChange={e => { const file = e.target.files?.[0]; if (file) void uploadFile(file); e.target.value = ""; }} />
-            </label>
-            {uploading && <span role="status"> Reading file...</span>}
-            {attachment && <div className="mt-2 text-emerald-300">{attachment.filename} ready for the next message or task plan.
-              <button type="button" disabled={busy} className="ml-3 underline" onClick={() => setAttachment(null)}>Remove</button></div>}
-          </div>
+          <FileUploadZone
+            onFileSelected={uploadFile}
+            disabled={!selectedChat || busy}
+            maxSize={500 * 1024 * 1024}
+          />
+          {attachment && <div className="mb-3 p-3 bg-emerald-900/30 border border-emerald-700 rounded text-emerald-300 text-sm">
+            ✓ {attachment.filename} ready for the next message or task plan.
+            <button type="button" disabled={busy} className="ml-3 underline" onClick={() => setAttachment(null)}>Remove</button></div>}
           <div className="flex gap-3">
             <textarea
               rows={2}

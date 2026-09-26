@@ -514,7 +514,7 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (!localStorage.getItem("access_token")) {
-      router.push("/login");
+      router.replace("/login");
       return;
     }
     let cancelled = false;
@@ -550,6 +550,14 @@ export default function ChatPage() {
 
   const selectedChat = chats.find((chat) => chat.id === selectedChatId) ?? null;
 
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-zinc-950 text-white flex items-center justify-center">
+        <div role="status">Loading your workspace...</div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-zinc-950 text-white flex flex-col lg:flex-row lg:h-dvh lg:overflow-hidden">
       <aside className="w-full lg:w-64 xl:w-72 shrink-0 border-b lg:border-r border-zinc-800 bg-zinc-900 p-4 lg:overflow-y-auto">
@@ -558,7 +566,7 @@ export default function ChatPage() {
           <button
             onClick={() => {
               localStorage.removeItem("access_token");
-              router.push("/login");
+              router.replace("/login");
             }}
             className="text-sm text-zinc-300 hover:text-white"
           >
